@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CircleKey</title>
+    <style>
+      :root{color-scheme:light;--ink:#20201d;--muted:#6f716a;--line:#dfdbd0;--teal:#0f766e;--red:#d95f45;--bg:#f6f4ef;--surface:#fff;--soft:#f1eee7}
+      *{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:22px}
+      main{width:min(100%,760px);margin:0 auto;display:grid;gap:14px}.hero{background:linear-gradient(135deg,rgba(15,118,110,.96),rgba(53,107,140,.86));color:#fff;border-radius:10px;padding:28px;min-height:230px;display:flex;align-items:flex-end}.hero.emergency{background:linear-gradient(135deg,rgba(217,95,69,.96),rgba(15,118,110,.88))}.hero-content{display:flex;align-items:center;gap:16px}.emergency-photo{width:76px;height:76px;border-radius:22px;overflow:hidden;background:rgba(255,255,255,.18);display:none;place-items:center;flex:0 0 auto}.emergency-photo img{width:100%;height:100%;object-fit:cover}.eyebrow{margin:0 0 6px;text-transform:uppercase;letter-spacing:.08em;font-size:.76rem;font-weight:900;color:rgba(255,255,255,.78)}h1{margin:0;font-size:clamp(2.2rem,10vw,4.1rem);line-height:.96}.hero span{display:block;margin-top:10px;color:rgba(255,255,255,.84);font-weight:800}.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:10px}.meta{color:var(--muted);font-size:.95rem;line-height:1.45}.actions{display:grid;gap:10px}a.button{min-height:48px;border-radius:8px;background:var(--teal);color:#fff;text-decoration:none;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 14px}.button.secondary{background:var(--soft);color:var(--ink);border:1px solid var(--line)}.brand{font-weight:900;color:var(--muted);font-size:.82rem;text-align:center}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{background:#fbfaf7;border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:4px}.field span{color:var(--muted);font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.field strong{font-size:1.02rem;line-height:1.35}.wide{grid-column:1/-1}.danger{border-color:rgba(217,95,69,.42);background:#fff7f4}.loading{min-height:160px;display:grid;place-items:center;text-align:center}.contact-actions{display:flex;flex-wrap:wrap;gap:8px}.contact-actions a{color:var(--teal);font-weight:900;text-decoration:none}.hidden{display:none}@media (max-width:620px){body{padding:14px}.hero{min-height:210px;padding:22px}.hero-content{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero" id="hero">
+        <div class="hero-content">
+          <div class="emergency-photo" id="emergencyPhoto"></div>
+          <div>
+          <p class="eyebrow" id="eyebrow">CircleKey secure share</p>
+          <h1 id="title">CircleKey</h1>
+          <span id="subtitle">Private access link</span>
+          </div>
+        </div>
+      </section>
+      <section id="content" class="card loading"><span class="meta">Loading CircleKey...</span></section>
+      <div class="brand">CircleKey</div>
+    </main>
+    <script>
+      const SUPABASE_URL = "https://fbfvckfiswfnyknmfipa.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_Ce61P3cb8Dl9tTk3ADZEvg_n0-xaVnb";
+      const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+      const scan = params.get("scan");
+      const emergency = params.get("emergency");
+      const token = emergency || scan || "";
+      const type = emergency ? "emergency" : "scan";
+      const hero = document.getElementById("hero");
+      const content = document.getElementById("content");
+      const text = (value, fallback = "") => String(value ?? fallback);
+      const escapeHtml = (value) => text(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+      const telHref = (phone) => phone ? `tel:${String(phone).replace(/[^+0-9]/g, "")}` : "";
+      const mailHref = (email) => email ? `mailto:${email}` : "";
+
+      function setHero(title, subtitle, emergencyMode = false) {
+        document.getElementById("title").textContent = title;
+        document.getElementById("subtitle").textContent = subtitle;
+        document.getElementById("eyebrow").textContent = emergencyMode ? "CircleKey emergency ID" : "CircleKey secure share";
+        hero.classList.toggle("emergency", emergencyMode);
+      }
+
+      function setEmergencyPhoto(src, label) {
+        const target = document.getElementById("emergencyPhoto");
+        if (!target) return;
+        if (!src) {
+          target.style.display = "none";
+          target.innerHTML = "";
+          return;
+        }
+        target.style.display = "grid";
+        target.innerHTML = `<img src="${escapeHtml(src)}" alt="${escapeHtml(label || "Emergency profile photo")}" />`;
+      }
+
+      function appCard(label = "Open in CircleKey") {
+        return `<article class="card">
+          <strong>${escapeHtml(label)}</strong>
+          <span class="meta">If CircleKey is installed, open this QR in the app. If you do not have the app yet, this page will become the download page for the prototype.</span>
+          <div class="actions">
+            <a class="button" href="${token ? `circlekey://${type}/${encodeURIComponent(token)}` : "circlekey://scan/"}">Open in CircleKey</a>
+            <a class="button secondary" href="https://github.com/MeLzAr707/CircleKeyLanding">CircleKey website</a>
+          </div>
+        </article>`;
+      }
+
+      function field(label, value, fallback = "Not listed") {
+        return `<div class="field"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || fallback)}</strong></div>`;
+      }
+
+      function contactCard(contact) {
+        const phone = text(contact.phone);
+        const email = text(contact.email);
+        return `<div class="field wide">
+          <span>${escapeHtml(contact.relationship || "Emergency contact")}</span>
+          <strong>${escapeHtml(contact.name || "Emergency contact")}</strong>
+          ${contact.notes ? `<div class="meta">${escapeHtml(contact.notes)}</div>` : ""}
+          <div class="contact-actions">
+            ${phone ? `<a href="${telHref(phone)}">${escapeHtml(phone)}</a>` : ""}
+            ${email ? `<a href="${mailHref(email)}">${escapeHtml(email)}</a>` : ""}
+          </div>
+        </div>`;
+      }
+
+      async function fetchEmergencyPayload(emergencyToken) {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_emergency_payload`, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ emergency_token: emergencyToken }),
+        });
+        return await response.json();
+      }
+
+      async function renderEmergency() {
+        setHero("Emergency ID", "Loading emergency profile", true);
+        setEmergencyPhoto("");
+        try {
+          const payload = await fetchEmergencyPayload(emergency);
+          if (payload?.error || !payload?.profile) {
+            setHero("Profile unavailable", "Ask the owner for a current Emergency ID", true);
+            content.className = "card danger";
+            content.innerHTML = `<strong>Emergency profile unavailable</strong><span class="meta">${escapeHtml(payload?.error || "This Emergency ID could not be loaded.")}</span>${appCard("Open in CircleKey")}`;
+            return;
+          }
+          const profile = payload.profile;
+          const structuredContacts = Array.isArray(profile.structured_contacts) ? profile.structured_contacts : [];
+          setHero(profile.full_name || "Emergency profile", `Age ${profile.age || "--"} | ${profile.blood_type || "--"} | ${profile.location || "Location not set"}`, true);
+          setEmergencyPhoto(profile.avatar_url, profile.full_name);
+          content.className = "card";
+          content.innerHTML = `<strong>Emergency information</strong>
+            <span class="meta">This is the public emergency profile the owner chose to share.</span>
+            <div class="grid">
+              ${field("Allergies", profile.allergies, "Hidden by owner")}
+              ${field("Conditions", profile.conditions, "None listed")}
+              ${field("Medications", profile.medications, "Hidden by owner")}
+              ${field("Emergency contact", profile.emergency_contact, "Hidden by owner")}
+              ${field("Doctor/care contact", profile.doctor_contact, "Hidden by owner")}
+              ${structuredContacts.map(contactCard).join("")}
+            </div>
+            ${appCard("Open full profile in CircleKey")}`;
+        } catch (error) {
+          setHero("Profile unavailable", "Network error", true);
+          content.className = "card danger";
+          content.innerHTML = `<strong>Could not load Emergency ID</strong><span class="meta">Check your connection and scan again.</span>${appCard("Open in CircleKey")}`;
+        }
+      }
+
+      function renderDefault() {
+        setHero(scan ? "Shared Key" : "CircleKey", scan ? "Private access QR" : "Private access link");
+        setEmergencyPhoto("");
+        content.className = "card";
+        content.innerHTML = appCard(scan ? "Open shared access" : "Open this share");
+      }
+
+      if (emergency) renderEmergency();
+      else renderDefault();
+    </script>
+  </body>
+</html>
